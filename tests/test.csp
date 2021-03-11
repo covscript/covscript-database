@@ -4,11 +4,11 @@ package test
 
 function show(r)
     try
-        var columns = r.columns()
+        var columns = r.column_count()
         foreach i in range(columns) do system.out.print(r.column_name(i) + "\t")
         system.out.println("")
-        while r.next()
-            foreach i in range(columns) do system.out.print("(" + r.get_string(i) + ")\t")
+        while !r.done()
+            foreach i in range(columns) do system.out.print("(" + r.get(i) + ")\t")
             system.out.println("")
         end
     catch e

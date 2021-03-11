@@ -94,22 +94,42 @@ CNI_ROOT_NAMESPACE {
 	{
 		CNI_V(connected, &nanodbc::connection::connected)
 		CNI_V(disconnect, &nanodbc::connection::disconnect)
-		CNI_V(dbms_name, &nanodbc::connection::dbms_name)
-		CNI_V(dbms_version, &nanodbc::connection::dbms_version)
-		CNI_V(driver_name, &nanodbc::connection::driver_name)
-		CNI_V(database_name, &nanodbc::connection::database_name)
 
-		nanodbc::result execute(nanodbc::connection &conn, const std::string &query) {
+		std::string dbms_name(const nanodbc::connection &conn) {
+			HANDLE_EXCEPTION(return wide2local(conn.database_name()))
+		}
+
+		CNI(dbms_name)
+
+		std::string dbms_version(const nanodbc::connection &conn) {
+			HANDLE_EXCEPTION(return wide2local(conn.dbms_version()))
+		}
+
+		CNI(dbms_version)
+
+		std::string driver_name(const nanodbc::connection &conn) {
+			HANDLE_EXCEPTION(return wide2local(conn.driver_name()))
+		}
+
+		CNI(driver_name)
+
+		std::string database_name(const nanodbc::connection &conn) {
+			HANDLE_EXCEPTION(return wide2local(conn.database_name()))
+		}
+
+		CNI(database_name)
+
+		nanodbc::result exec(nanodbc::connection &conn, const std::string &query) {
 			HANDLE_EXCEPTION(return nanodbc::execute(conn, local2wide(query)))
 		}
 
-		CNI(execute)
+		CNI(exec)
 
-		void just_execute(nanodbc::connection &conn, const std::string &query) {
+		void just_exec(nanodbc::connection &conn, const std::string &query) {
 			HANDLE_EXCEPTION(nanodbc::just_execute(conn, local2wide(query)))
 		}
 
-		CNI(just_execute)
+		CNI(just_exec)
 
 		nanodbc::statement prepare(nanodbc::connection &conn, const std::string &query) {
 			HANDLE_EXCEPTION(return nanodbc::statement(conn, local2wide(query)))
@@ -120,31 +140,19 @@ CNI_ROOT_NAMESPACE {
 
 	CNI_NAMESPACE(result)
 	{
-		CNI_V(columns, &nanodbc::result::columns)
+		CNI_V(column_count, &nanodbc::result::columns)
 
-		bool next(nanodbc::result &r) {
-			HANDLE_EXCEPTION(return r.next())
+		bool done(nanodbc::result &r) {
+			HANDLE_EXCEPTION(return !r.next())
 		}
 
-		CNI(next)
+		CNI(done)
 
-		cs::number get_integer(const nanodbc::result &r, short column) {
-			HANDLE_EXCEPTION(return r.get<long>(column))
-		}
-
-		CNI(get_integer)
-
-		cs::number get_real(const nanodbc::result &r, short column) {
-			HANDLE_EXCEPTION(return r.get<double>(column))
-		}
-
-		CNI(get_real)
-
-		std::string get_string(const nanodbc::result &r, short column) {
+		std::string get(const nanodbc::result &r, short column) {
 			HANDLE_EXCEPTION(return wide2local(r.get<nanodbc::string>(column)))
 		}
 
-		CNI(get_string)
+		CNI(get)
 
 		std::string column_name(const nanodbc::result &r, short column) {
 			HANDLE_EXCEPTION(return wide2local(r.column_name(column)))
@@ -152,11 +160,11 @@ CNI_ROOT_NAMESPACE {
 
 		CNI(column_name)
 
-		std::string column_datatype_name(const nanodbc::result &r, short column) {
+		std::string column_decltype(const nanodbc::result &r, short column) {
 			HANDLE_EXCEPTION(return wide2local(r.column_datatype_name(column)))
 		}
 
-		CNI(column_datatype_name)
+		CNI(column_decltype)
 
 		bool is_null(const nanodbc::result &r, short column) {
 			return r.is_null(column);
@@ -167,36 +175,20 @@ CNI_ROOT_NAMESPACE {
 
 	CNI_NAMESPACE(statement)
 	{
-		nanodbc::result execute(nanodbc::statement &stmt) {
+		nanodbc::result exec(nanodbc::statement &stmt) {
 			HANDLE_EXCEPTION(return stmt.execute())
 		}
 
-		CNI(execute)
+		CNI(exec)
 
-		void just_execute(nanodbc::statement &stmt) {
+		void just_exec(nanodbc::statement &stmt) {
 			HANDLE_EXCEPTION(stmt.just_execute())
 		}
 
-		CNI(just_execute)
+		CNI(just_exec)
 
 		CNI_V(reset_parameters, &nanodbc::statement::reset_parameters)
 		CNI_V(parameters, &nanodbc::statement::parameters)
-
-		/* TODO: Could not work properly
-		void bind_integer(nanodbc::statement &stmt, short idx, long val)
-		{
-		    stmt.bind(idx, &val);
-		}
-
-		CNI(bind_integer)
-
-		void bind_real(nanodbc::statement &stmt, short idx, double val)
-		{
-		    stmt.bind(idx, &val);
-		}
-
-		CNI(bind_real)
-		*/
 
 		void bind(nanodbc::statement &stmt, short idx, const std::string &val) {
 			stmt.bind(idx, val.c_str());
@@ -212,6 +204,6 @@ CNI_ROOT_NAMESPACE {
 	}
 }
 
-CNI_ENABLE_TYPE_EXT_V(connection, nanodbc::connection, cs::odbc::connection)
-CNI_ENABLE_TYPE_EXT_V(result, nanodbc::result, cs::odbc::result)
-CNI_ENABLE_TYPE_EXT_V(statement, nanodbc::statement, cs::odbc::statement)
+CNI_ENABLE_TYPE_EXT_V(connection, nanodbc::connection, cs::database::connection)
+CNI_ENABLE_TYPE_EXT_V(result, nanodbc::result, cs::database::result)
+CNI_ENABLE_TYPE_EXT_V(statement, nanodbc::statement, cs::database::statement)
