@@ -1,0 +1,61 @@
+package mysql_ext
+import codec.json as json
+import regex
+function read_config()
+    var ifs = iostream.ifstream("./ds_config.json")
+    var config = json.from_stream(ifs)
+    return json.to_var(config)
+end
+struct record
+    var name=null
+    var data=null
+end
+struct column
+    var name=null
+    var type=null
+    var data=new string
+end
+function table_list(db)
+    var tables=exec(db,"SELECT TABLE_NAME FROM information_schema.TABLES")
+    var table_list=new array
+    foreach row in tables
+        table_list.push_back(row[0].data)
+    end
+    return move(table_list)
+end
+function column_info(db,table)
+    var info=exec(db,"select COLUMN_NAME,COLUMN_TYPE from information_schema.COLUMNS where TABLE_SCHEMA=\""+table+"\"")
+    var filter=regex.build("^(\\w+)\\(.*\\)$")
+    var res=new array
+    foreach it in info
+        var col=new column
+        col.name=it[0].data
+        col.type=filter.match(it[1].data).str(1)
+        res.push_back(move(col))
+    end
+    return move(res)
+end
+function exec(db,sql)
+    var data=new array
+    var stmt=db.exec(sql)
+    while !stmt.done()
+        var column_count=stmt.column_count()-1
+        var row=new array
+        for i=0,i<=column_count,++i
+            var dat=new record
+            dat.name=stmt.column_name(i)
+            dat.data=stmt.get(i)
+            row.push_back(dat)
+        end
+        data.push_back(row)
+    end
+    return data
+end
+function show(dat)
+    foreach it in dat[0] do system.out.print(it.name+"\t")
+    system.out.println("")
+    foreach row in dat
+        foreach it in row do system.out.print("("+it.data+")\t")
+        system.out.println("")
+    end
+end

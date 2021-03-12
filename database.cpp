@@ -160,12 +160,6 @@ CNI_ROOT_NAMESPACE {
 
 		CNI(column_name)
 
-		std::string column_decltype(const nanodbc::result &r, short column) {
-			HANDLE_EXCEPTION(return wide2local(r.column_datatype_name(column)))
-		}
-
-		CNI(column_decltype)
-
 		bool is_null(const nanodbc::result &r, short column) {
 			return r.is_null(column);
 		}
