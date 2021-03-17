@@ -7,3 +7,4 @@ cd ../..
 rm -rf build
 mkdir -p build/imports
 cp cmake-build/unix/*.cse build/imports/
+cp csdbc/*.csp build/imports/
