@@ -84,8 +84,8 @@ class statement extends csdbc.statement_base
             stmt.exec()
         until stmt.done()
     end
-    function bind(idx, str) override
-        stmt.bind_text(idx + 1, str)
+    function bind(idx, val) override
+        stmt.bind_text(idx + 1, to_string(val))
     end
 end
 

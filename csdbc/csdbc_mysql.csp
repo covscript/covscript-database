@@ -75,6 +75,7 @@ constant mysql_typenames_full = {
 @end
 
 class statement extends csdbc.statement_base
+    var bind_cache = new array
     var stmt = null
     function exec() override
         return convert(stmt.exec())
@@ -82,8 +83,9 @@ class statement extends csdbc.statement_base
     function just_exec() override
         stmt.just_exec()
     end
-    function bind(idx, str) override
-        stmt.bind(idx, str)
+    function bind(idx, val) override
+        bind_cache[idx] = to_string(val)
+        stmt.bind(idx, bind_cache[idx])
     end
 end
 
