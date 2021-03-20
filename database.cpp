@@ -96,7 +96,7 @@ CNI_ROOT_NAMESPACE {
 		CNI_V(disconnect, &nanodbc::connection::disconnect)
 
 		std::string dbms_name(const nanodbc::connection &conn) {
-			HANDLE_EXCEPTION(return wide2local(conn.database_name()))
+			HANDLE_EXCEPTION(return wide2local(conn.dbms_name()))
 		}
 
 		CNI(dbms_name)
