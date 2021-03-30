@@ -7,4 +7,3 @@ cd ..\..
 rd /S /Q build
 mkdir build\imports
 xcopy /Y cmake-build\mingw-w64\*.cse build\imports\
-xcopy /Y csdbc\*.csp build\imports\
