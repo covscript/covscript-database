@@ -144,33 +144,60 @@ namespace nanodbc
 #endif
 /// @}
 
+#if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
+#ifndef NANODBC_SUPPORT_STRING_VIEW
+#define NANODBC_SUPPORT_STRING_VIEW
+#endif
+#endif
+
 // You must explicitly request Unicode support by defining NANODBC_ENABLE_UNICODE at compile time.
 #ifndef DOXYGEN
 #ifdef NANODBC_ENABLE_UNICODE
 #ifdef NANODBC_USE_IODBC_WIDE_STRINGS
 #define NANODBC_TEXT(s) U##s
 typedef std::u32string string;
+#ifdef NANODBC_SUPPORT_STRING_VIEW
+typedef std::u32string_view string_view;
+#endif
 #else
 #ifdef _MSC_VER
 typedef std::wstring string;
+#ifdef NANODBC_SUPPORT_STRING_VIEW
+typedef std::wstring_view string_view;
+#endif
 #define NANODBC_TEXT(s) L##s
 #else
 typedef std::u16string string;
+#ifdef NANODBC_SUPPORT_STRING_VIEW
+typedef std::u16string_view string_view;
+#endif
 #define NANODBC_TEXT(s) u##s
 #endif
 #endif
 #else
 typedef std::string string;
+#ifdef NANODBC_SUPPORT_STRING_VIEW
+typedef std::string_view string_view;
+#endif
 #define NANODBC_TEXT(s) s
 #endif
 
 #ifdef NANODBC_USE_IODBC_WIDE_STRINGS
 typedef std::u32string wide_string;
+#ifdef NANODBC_SUPPORT_STRING_VIEW
+typedef std::u32string_view wide_string_view;
+#endif
 #else
 #ifdef _MSC_VER
 typedef std::wstring wide_string;
+#ifdef NANODBC_SUPPORT_STRING_VIEW
+typedef std::wstring_view wide_string_view;
+#endif
 #else
 typedef std::u16string wide_string;
+#ifdef NANODBC_SUPPORT_STRING_VIEW
+typedef std::u16string_view wide_string_view;
+#endif
 #endif
 #endif
 
@@ -354,7 +381,12 @@ template <typename T>
 using is_string = std::integral_constant<
     bool,
     std::is_same<typename std::decay<T>::type, std::string>::value ||
-        std::is_same<typename std::decay<T>::type, wide_string>::value>;
+        std::is_same<typename std::decay<T>::type, wide_string>::value
+#ifdef NANODBC_SUPPORT_STRING_VIEW
+        || std::is_same<typename std::decay<T>::type, std::string_view>::value ||
+        std::is_same<typename std::decay<T>::type, wide_string_view>::value
+#endif
+    >;
 
 /// \brief A type trait for testing if a type is a character compatible with the current nanodbc
 /// configuration
@@ -429,10 +461,10 @@ public:
     const class connection& connection() const;
 
     /// Returns the connection object.
-    operator class connection&();
+    operator class connection &();
 
     /// Returns the connection object.
-    operator const class connection&() const;
+    operator const class connection &() const;
 
 private:
     class transaction_impl;
@@ -1769,6 +1801,64 @@ public:
         result result_;
     };
 
+    /// \brief Result set for a list of procedures in the data source.
+    class procedures
+    {
+    public:
+        bool next();                      ///< Move to the next result in the result set.
+        string procedure_catalog() const; ///< Fetch procedure catalog.
+        string procedure_schema() const;  ///< Fetch procedure schema.
+        string procedure_name() const;    ///< Fetch procedure name.
+        string procedure_remarks() const; ///< Fetch procedure remarks.
+        short procedure_type() const;     ///< Fetch procedure type.
+
+    private:
+        friend class nanodbc::catalog;
+        procedures(result& find_result);
+        result result_;
+    };
+
+    /// \brief Result set for a list of procedures in the data source.
+    class procedure_columns
+    {
+    public:
+        bool next();                           ///< Move to the next result in the result set.
+        string procedure_catalog() const;      ///< Fetch procedure catalog.
+        string procedure_schema() const;       ///< Fetch procedure schema.
+        string procedure_name() const;         ///< Fetch procedure name.
+        string column_name() const;            ///< Fetch column name.
+        short column_type() const;             ///< Fetch column type.
+        short data_type() const;               ///< Fetch column data type.
+        string type_name() const;              ///< Fetch column type name.
+        long column_size() const;              ///< Fetch column size.
+        long buffer_length() const;            ///< Fetch buffer length.
+        short decimal_digits() const;          ///< Fetch decimal digits.
+        short numeric_precision_radix() const; ///< Fetch numeric precission.
+        short nullable() const;                ///< True iff column is nullable.
+        string remarks() const;                ///< Fetch column remarks.
+        string column_default() const;         ///< Fetch column's default.
+        short sql_data_type() const;           ///< Fetch column's SQL data type.
+        short sql_datetime_subtype() const;    ///< Fetch datetime subtype of column.
+        long char_octet_length() const;        ///< Fetch char octet length.
+
+        /// \brief Ordinal position of the column in the table.
+        /// The first column in the table is number 1.
+        /// Returns ORDINAL_POSITION column value in result set returned by SQLColumns.
+        long ordinal_position() const;
+
+        /// \brief Fetch column is-nullable information.
+        ///
+        /// \note MSDN: This column returns a zero-length string if nullability is unknown.
+        ///       ISO rules are followed to determine nullability.
+        ///       An ISO SQL-compliant DBMS cannot return an empty string.
+        string is_nullable() const;
+
+    private:
+        friend class nanodbc::catalog;
+        procedure_columns(result& find_result);
+        result result_;
+    };
+
     /// \brief Creates catalog operating on database accessible through the specified connection.
     explicit catalog(connection& conn);
 
@@ -1830,6 +1920,37 @@ public:
     /// Empty string argument is equivalent to passing the search pattern '%'.
     catalog::primary_keys find_primary_keys(
         const string& table,
+        const string& schema = string(),
+        const string& catalog = string());
+
+    /// \brief Creates result set with catalog, schema, procedure, and procedure types.
+    ///
+    /// Procedure information is obtained by executing `SQLProcedures` function within
+    /// scope of the connected database accessible with the specified connection.
+    /// Since this function is implemented in terms of the `SQLProcedures`s, it returns
+    /// result set ordered by PROCEDURE_CAT, PROCEDUORE_SCHEM, and PROCEDURE_NAME.
+    ///
+    /// All arguments are treated as the Pattern Value Arguments.
+    /// Empty string argument is equivalent to passing the search pattern '%'.
+
+    catalog::procedures find_procedures(
+        const string& procedure = string(),
+        const string& schema = string(),
+        const string& catalog = string());
+
+    /// \brief Creates result set with columns in one or more procedures.
+    ///
+    /// Columns information is obtained by executing `SQLProcedureColumns` function within
+    /// scope of the connected database accessible with the specified connection.
+    /// Since this function is implemented in terms of the `SQLProcedureColumns`, it returns
+    /// result set ordered by PROCEDURE_CAT, PROCEDURE_SCHEM, PROCEDURE_NAME, and
+    /// COLUMN_TYPE.
+    ///
+    /// All arguments are treated as the Pattern Value Arguments.
+    /// Empty string argument is equivalent to passing the search pattern '%'.
+    catalog::procedure_columns find_procedure_columns(
+        const string& column = string(),
+        const string& procedure = string(),
         const string& schema = string(),
         const string& catalog = string());
 

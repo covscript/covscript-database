@@ -3,7 +3,7 @@
     "Name": "database",
     "Info": "ODBC Extension",
     "Author": "CovScript Organization",
-    "Version": "1.0.1",
+    "Version": "2.14.0_v1",
     "Target": "build/imports/database.cse",
     "Dependencies": []
 }
