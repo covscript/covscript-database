@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 3.10)
 project(covscript-database)
 include_directories(.)
 
@@ -135,7 +135,6 @@ endif ()
 # find ODBC libraries to link
 
 if (UNIX)
-    set(ODBC_LIBRARIES ${ODBCLIB})
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${ODBC_LINK_FLAGS}")
 elseif (MSVC OR CMAKE_CXX_COMPILER_ID MATCHES "Intel")
     set(ODBC_LIBRARIES odbc32.lib odbccp32.lib Ws2_32.lib)

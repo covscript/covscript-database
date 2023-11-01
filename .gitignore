@@ -49,3 +49,5 @@ cmake-build-debug/
 # DataSource Config File
 ds_config.json
 *.ini
+
+.DS_Store
