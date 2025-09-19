@@ -132,6 +132,29 @@ if (UNIX)
     message(STATUS "ODBC link flags: ${ODBC_LINK_FLAGS}")
 endif ()
 
+# patch for SQLWCHAR
+
+include(CheckCXXSourceCompiles)
+
+set(CMAKE_REQUIRED_FLAGS "${ODBC_CFLAGS}")
+
+check_cxx_source_compiles("
+#include <string>
+#include <sql.h>
+#include <sqlext.h>
+
+int main() {
+    using Traits = std::char_traits<SQLWCHAR>;
+    (void)Traits::length((const SQLWCHAR*)0);
+    return 0;
+}
+" HAS_SQLWCHAR_CHAR_TRAITS)
+
+if (NOT HAS_SQLWCHAR_CHAR_TRAITS)
+    message("-- Applying patch for std::char_traits<SQLWCHAR>")
+    add_compile_definitions(NANODBC_SQLWCHAR_PATCH)
+endif ()
+
 # find ODBC libraries to link
 
 if (UNIX)

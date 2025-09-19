@@ -131,6 +131,23 @@ using nanodbc::wide_string;
 #ifdef NANODBC_ENABLE_UNICODE
 #define NANODBC_FUNC(f) f##W
 #define NANODBC_SQLCHAR SQLWCHAR
+// Patch for SQLWCHAR in unixODBC
+// unixODBC defined SQLWCHAR as unsigned short, but std::char_traits<unsigned short> is undefined.
+// Author: mikecovlee@163.com
+#ifdef NANODBC_SQLWCHAR_PATCH
+template <> struct std::char_traits<SQLWCHAR> {
+    using char_type = SQLWCHAR;
+    static inline bool eq(char_type __c1, char_type __c2) noexcept {
+        return __c1 == __c2;
+    }
+    static inline size_t length(const char_type* __s) noexcept {
+        size_t __len = 0;
+        for (; !eq(*__s, char_type(0)); ++__s)
+            ++__len;
+        return __len;
+    }
+};
+#endif
 #else
 #define NANODBC_FUNC(f) f
 #define NANODBC_SQLCHAR SQLCHAR
