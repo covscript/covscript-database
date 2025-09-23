@@ -57,7 +57,6 @@ if (NANODBC_ENABLE_WORKAROUND_NODATA)
 endif ()
 message(STATUS "nanodbc feature: Enable SQL_NO_DATA bug workaround - ${NANODBC_ENABLE_WORKAROUND_NODATA}")
 
-
 # find CovScript SDK
 
 if (DEFINED ENV{CS_DEV_PATH})
@@ -140,6 +139,15 @@ set(CMAKE_REQUIRED_FLAGS "${ODBC_CFLAGS}")
 
 check_cxx_source_compiles("
 #include <string>
+
+#ifdef _WIN32
+// needs to be included above sql.h for windows
+#if !defined(__MINGW32__) && !defined(NOMINMAX)
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
 #include <sql.h>
 #include <sqlext.h>
 
@@ -153,6 +161,10 @@ int main() {
 if (NOT HAS_SQLWCHAR_CHAR_TRAITS)
     message("-- Applying patch for std::char_traits<SQLWCHAR>")
     add_compile_definitions(NANODBC_SQLWCHAR_PATCH)
+endif ()
+
+if (APPLE AND HAS_SQLWCHAR_CHAR_TRAITS)
+    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations)
 endif ()
 
 # find ODBC libraries to link
