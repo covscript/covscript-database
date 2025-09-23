@@ -163,10 +163,6 @@ if (NOT HAS_SQLWCHAR_CHAR_TRAITS)
     add_compile_definitions(NANODBC_SQLWCHAR_PATCH)
 endif ()
 
-if (APPLE AND HAS_SQLWCHAR_CHAR_TRAITS)
-    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations)
-endif ()
-
 # find ODBC libraries to link
 
 if (UNIX)
@@ -181,6 +177,10 @@ endif ()
 # Target Settings
 
 add_library(covscript-database SHARED database.cpp nanodbc/nanodbc.cpp)
+
+if (APPLE AND HAS_SQLWCHAR_CHAR_TRAITS)
+    target_compile_options(covscript-database PRIVATE -Wno-deprecated-declarations)
+endif ()
 
 target_link_libraries(covscript-database covscript ${ODBC_LIBRARIES})
 
