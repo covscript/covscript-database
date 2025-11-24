@@ -117,7 +117,11 @@ set(CMAKE_REQUIRED_FLAGS "${ODBC_CFLAGS}")
 check_cxx_source_compiles("
 #include <string>
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
+// needs to be included above sql.h for windows
+#if !defined(__MINGW32__) && !defined(NOMINMAX)
+#define NOMINMAX
+#endif
 #include <windows.h>
 #endif
 
@@ -150,6 +154,10 @@ endif ()
 # Target Settings
 
 add_library(covscript-database SHARED database.cpp nanodbc/nanodbc.cpp)
+
+if (APPLE AND HAS_SQLWCHAR_CHAR_TRAITS)
+    target_compile_options(covscript-database PRIVATE -Wno-deprecated-declarations)
+endif ()
 
 target_link_libraries(covscript-database covscript ${ODBC_LIBRARIES})
 
