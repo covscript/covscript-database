@@ -4203,6 +4203,15 @@ unsigned long statement::parameter_size(short param_index) const
     template void statement::bind_strings(                                                         \
         short, type::value_type const*, std::size_t, std::size_t, bool const*, param_direction)
 
+#ifdef NANODBC_SUPPORT_STRING_VIEW
+#define NANODBC_INSTANTIATE_BIND_STRING_VIEW(type)                                                 \
+    template void statement::bind_strings(short, std::vector<type> const&, param_direction);       \
+    template void statement::bind_strings(                                                         \
+        short, std::vector<type> const&, type::value_type const*, param_direction);                \
+    template void statement::bind_strings(                                                         \
+        short, std::vector<type> const&, bool const*, param_direction);
+#endif
+
 // The following are the only supported instantiations of statement::bind().
 NANODBC_INSTANTIATE_BINDS(std::string::value_type);
 NANODBC_INSTANTIATE_BINDS(wide_string::value_type);
@@ -4224,8 +4233,8 @@ NANODBC_INSTANTIATE_BIND_STRINGS(std::string);
 NANODBC_INSTANTIATE_BIND_STRINGS(wide_string);
 
 #ifdef NANODBC_SUPPORT_STRING_VIEW
-NANODBC_INSTANTIATE_BIND_STRINGS(std::string_view);
-NANODBC_INSTANTIATE_BIND_STRINGS(wide_string_view);
+NANODBC_INSTANTIATE_BIND_STRING_VIEW(std::string_view);
+NANODBC_INSTANTIATE_BIND_STRING_VIEW(wide_string_view);
 #endif
 
 #undef NANODBC_INSTANTIATE_BINDS
